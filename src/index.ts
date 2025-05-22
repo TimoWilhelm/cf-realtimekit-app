@@ -51,6 +51,8 @@ export class Meeting extends DurableObject<Env> {
 
 		const meeting = await this.getOrCreateMeeting();
 
+		console.log('Meeting', meeting);
+
 		const addParticipantResponse = await client['/meetings/{meeting_id}/participants'].post({
 			params: {
 				meeting_id: meeting.id,
@@ -71,6 +73,9 @@ export class Meeting extends DurableObject<Env> {
 		if (!participant.success || !participant.data) {
 			throw new Error('Error adding participant');
 		}
+
+		console.log('Added Participant', participant.data);
+
 		const participantData = participant.data;
 
 		return participantData;
