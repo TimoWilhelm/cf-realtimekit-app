@@ -1,0 +1,26 @@
+{
+	"name": "durable-object-realtimekit",
+	"version": "0.0.0",
+	"type": "module",
+	"private": true,
+	"scripts": {
+		"dev": "vite dev",
+		"build": "vite build",
+		"preview": "npm run build && vite preview",
+		"deploy": "npm run build && wrangler deploy",
+		"cf-typegen": "wrangler types"
+	},
+	"devDependencies": {
+		"@cloudflare/realtimekit": "^0.2.0",
+		"@cloudflare/realtimekit-ui": "^0.1.0",
+		"@cloudflare/vite-plugin": "^1.2.1",
+		"@dytesdk/video-background-transformer": "^2.0.5",
+		"@outerbase/browsable-durable-object": "^0.1.1",
+		"@types/node": "^22.15.21",
+		"fets": "^0.8.5",
+		"hono": "^4.7.10",
+		"typescript": "^5.5.2",
+		"vite": "^6.3.5",
+		"wrangler": "^4.15.1"
+	}
+}

@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<meta http-equiv="X-UA-Compatible" content="ie=edge" />
+		<style>
+			html,
+			body {
+				height: 100%;
+				margin: 0;
+			}
+		</style>
+
+		<script type="module">
+			import { defineCustomElements } from 'https://cdn.jsdelivr.net/npm/@cloudflare/realtimekit-ui/loader/index.es2017.js';
+			defineCustomElements();
+		</script>
+	</head>
+	<body>
+		<button id="connect" style="position: fixed; z-index: 10">Connect</button>
+
+		<rtk-meeting id="my-meeting"></rtk-meeting>
+
+		<script type="module">
+			import RealtimeKitClient from '@cloudflare/realtimekit';
+			import DyteVideoBackgroundTransformer from '@dytesdk/video-background-transformer';
+
+			const init = async () => {
+				const authTokenUrl = new URL('/api/auth-token', window.location.origin);
+
+				const query = new URLSearchParams(window.location.search);
+				if (query.has('preset')) {
+					authTokenUrl.searchParams.set('preset', query.get('preset'));
+				}
+
+				const authToken = await fetch(authTokenUrl).then((response) => response.text());
+
+				const meeting = await RealtimeKitClient.init({
+					authToken,
+					defaults: {
+						audio: true,
+						video: true,
+					},
+				});
+
+				await meeting.self.setVideoMiddlewareGlobalConfig({
+					disablePerFrameCanvasRendering: true,
+				});
+
+				const videoBackgroundTransformer = await DyteVideoBackgroundTransformer.init({
+					meeting: meeting,
+					segmentationConfig: {
+						pipeline: 'webgl2', // 'webgl2' | 'canvas2dCpu'
+					},
+				});
+
+				const videoMiddleware = await videoBackgroundTransformer.createStaticBackgroundVideoMiddleware(
+					`https://assets.dyte.io/backgrounds/bg-dyte-office.jpg`
+				);
+
+				meeting.self.addVideoMiddleware(videoMiddleware);
+
+				document.getElementById('my-meeting').meeting = meeting;
+			};
+
+			document.getElementById('connect').addEventListener('click', async () => {
+				document.getElementById('connect').style.display = 'none';
+				await init();
+			});
+		</script>
+	</body>
+</html>
