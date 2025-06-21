@@ -21,16 +21,6 @@ interface MeetingData {
 	};
 }
 
-export interface ParticipantData {
-	name?: string | null | undefined;
-	picture?: string | null | undefined;
-	preset_name: string;
-	custom_participant_id: string;
-	token: string;
-	created_at: string;
-	updated_at: string;
-	id: string;
-}
 
 type Preset =
 	| 'group_call_host'
@@ -46,7 +36,7 @@ export class Meeting extends DurableObject<Env> {
 		super(ctx, env);
 	}
 
-	async addParticipant({ id, preset, name }: { id: string; preset: Preset; name: string }): Promise<ParticipantData> {
+	async addParticipant({ id, preset, name }: { id: string; preset: Preset; name: string }) {
 		const client = getRealtimeClient(this.env.REALTIMEKIT_ORG_ID, this.env.REALTIMEKIT_API_KEY);
 
 		const meeting = await this.getOrCreateMeeting();
