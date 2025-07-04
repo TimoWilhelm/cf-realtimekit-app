@@ -1,26 +1,14 @@
 import { DurableObject } from 'cloudflare:workers';
 import { Browsable, studio } from '@outerbase/browsable-durable-object';
-import { getRealtimeClient } from './realtime';
+import { RealtimeKitClient } from './realtimekit';
 import { Hono } from 'hono';
+import { AiConfig, MeetingReadable, RecordingConfigReadable } from './realtimekit/client';
 
-interface MeetingData {
-	id: string;
-	title: string;
-	record_on_start: boolean;
-	live_stream_on_start: boolean;
-	persist_chat: boolean;
-	summarize_on_end: boolean;
-	is_large: boolean;
-	status: string;
-	created_at: string;
-	updated_at: string;
-	ai_config: {
-		conversation: Record<string, unknown>;
-		summarization: Record<string, unknown>;
-		transcription: Record<string, unknown>;
-	};
-}
-
+type MeetingData = MeetingReadable & {
+	recording_config?: RecordingConfigReadable;
+} & {
+	ai_config?: AiConfig;
+};
 
 type Preset =
 	| 'group_call_host'
@@ -36,39 +24,28 @@ export class Meeting extends DurableObject<Env> {
 		super(ctx, env);
 	}
 
-	async addParticipant({ id, preset, name }: { id: string; preset: Preset; name: string }) {
-		const client = getRealtimeClient(this.env.REALTIMEKIT_ORG_ID, this.env.REALTIMEKIT_API_KEY);
+	async addParticipant({ id, preset, name }: { id: string; preset: Preset; name: string }): Promise<{ jwt: string }> {
+		const client = new RealtimeKitClient(this.env.REALTIMEKIT_ORG_ID, this.env.REALTIMEKIT_API_KEY);
 
 		const meeting = await this.getOrCreateMeeting();
 
 		console.log('Meeting', meeting);
 
-		const addParticipantResponse = await client['/meetings/{meeting_id}/participants'].post({
-			params: {
-				meeting_id: meeting.id,
-			},
-			json: {
-				custom_participant_id: id,
-				name: name,
-				preset_name: preset,
-			},
+		const addParticipantResponse = await client.addParticipant(meeting.id, {
+			preset: preset,
+			customId: id,
+			name,
 		});
 
-		if (!addParticipantResponse.ok) {
+		if (!addParticipantResponse.data?.success || addParticipantResponse.data.data === undefined) {
 			throw new Error('Error adding participant');
 		}
 
-		const participant = await addParticipantResponse.json();
+		const participant = addParticipantResponse.data.data;
 
-		if (!participant.success || !participant.data) {
-			throw new Error('Error adding participant');
-		}
+		console.log('Added Participant', participant);
 
-		console.log('Added Participant', participant.data);
-
-		const participantData = participant.data;
-
-		return participantData;
+		return { jwt: participant.token };
 	}
 
 	private async getOrCreateMeeting() {
@@ -77,30 +54,18 @@ export class Meeting extends DurableObject<Env> {
 			return existingMeeting;
 		}
 
-		const client = getRealtimeClient(this.env.REALTIMEKIT_ORG_ID, this.env.REALTIMEKIT_API_KEY);
+		const client = new RealtimeKitClient(this.env.REALTIMEKIT_ORG_ID, this.env.REALTIMEKIT_API_KEY);
 
-		const createMeetingResponse = await client['/meetings'].post({
-			json: {
-				preferred_region: 'eu-central-1',
-				title: 'My Meeting',
-				live_stream_on_start: false,
-				persist_chat: false,
-				record_on_start: false,
-				summarize_on_end: false,
-			},
+		const createMeetingResponse = await client.createMeeting({
+			region: 'eu-central-1',
+			title: 'My Meeting',
 		});
 
-		if (!createMeetingResponse.ok) {
+		if (!createMeetingResponse.data?.success || createMeetingResponse.data.data === undefined) {
 			throw new Error('Error creating meeting');
 		}
 
-		const meeting = await createMeetingResponse.json();
-
-		if (!meeting.success || !meeting.data) {
-			throw new Error('Error creating meeting');
-		}
-
-		const meetingData = meeting.data as unknown as MeetingData;
+		const meetingData = createMeetingResponse.data.data;
 
 		console.log('Created Meeting', meetingData);
 
@@ -122,7 +87,7 @@ app.get('/api/auth-token', async (c) => {
 		name: 'Timo Wilhelm',
 	});
 
-	return c.text(participant.token);
+	return c.text(participant.jwt);
 });
 
 if (import.meta.env.DEV) {
