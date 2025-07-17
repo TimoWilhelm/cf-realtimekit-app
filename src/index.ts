@@ -77,14 +77,15 @@ export class Meeting extends DurableObject<Env> {
 
 const app = new Hono<{ Bindings: Env }>();
 
-app.get('/api/auth-token', async (c) => {
-	const id = c.env.DURABLE_MEETING.idFromName('my_meeting');
+app.get('/api/auth-token/:room', async (c) => {
+	const room = c.req.param('room');
+	const id = c.env.DURABLE_MEETING.idFromName(room);
 	const stub = c.env.DURABLE_MEETING.get(id);
 
 	const participant = await stub.addParticipant({
-		id: 'tiwi',
+		id: crypto.randomUUID(),
 		preset: 'group_call_participant',
-		name: 'Timo Wilhelm',
+		name: "Anonymous",
 	});
 
 	return c.text(participant.jwt);

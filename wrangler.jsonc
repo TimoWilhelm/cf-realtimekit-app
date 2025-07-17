@@ -4,7 +4,7 @@
  */
 {
 	"$schema": "node_modules/wrangler/config-schema.json",
-	"name": "durable-object-realtimekit",
+	"name": "realtimekit-app",
 	"main": "src/index.ts",
 	"compatibility_date": "2025-05-15",
 	"compatibility_flags": ["nodejs_compat"],

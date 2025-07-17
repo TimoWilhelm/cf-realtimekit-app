@@ -25,7 +25,8 @@
 			import DyteVideoBackgroundTransformer from '@dytesdk/video-background-transformer';
 
 			const init = async () => {
-				const authTokenUrl = new URL('/api/auth-token', window.location.origin);
+				const room = new URLSearchParams(window.location.search).get('room') || 'default';
+				const authTokenUrl = new URL(`/api/auth-token/${room}`, window.location.origin);
 
 				const query = new URLSearchParams(window.location.search);
 				if (query.has('preset')) {
@@ -60,6 +61,10 @@
 				meeting.self.addVideoMiddleware(videoMiddleware);
 
 				document.getElementById('my-meeting').meeting = meeting;
+
+				meeting.ai.on('transcript', (transcriptData) => {
+					console.log('Transcript:', transcriptData);
+				});
 			};
 
 			await init();

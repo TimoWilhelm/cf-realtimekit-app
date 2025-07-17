@@ -12,9 +12,9 @@ export class RealtimeKitClient {
 			},
 		});
 
-		this.#client.interceptors.response.use((response) => {
+		this.#client.interceptors.response.use(async (response) => {
 			if (!response.ok) {
-				console.log(`request to ${response.url} failed`);
+				console.log(`request to ${response.url} failed`, response.status, await response.text());
 			}
 			return response;
 		});
@@ -39,7 +39,20 @@ export class RealtimeKitClient {
 			client: this.#client,
 			body: {
 				preferred_region: meeting.region,
-				title: meeting.title
+				title: meeting.title,
+				summarize_on_end: true,
+				record_on_start: false,
+				ai_config: {
+					summarization: {
+						summary_type: "general",
+						text_format: "markdown",
+					},
+					transcription: {
+						keywords: ['RealtimeKit'],
+						language: 'en-US',
+						profanity_filter: false,
+					},
+				},
 			},
 		});
 	}
