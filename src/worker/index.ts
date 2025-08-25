@@ -82,9 +82,12 @@ app.get('/api/auth-token/:room', async (c) => {
 	const id = c.env.DURABLE_MEETING.idFromName(room);
 	const stub = c.env.DURABLE_MEETING.get(id);
 
+	const query = c.req.query();
+	const preset = query.preset as Preset || 'group_call_participant';
+
 	const participant = await stub.addParticipant({
 		id: crypto.randomUUID(),
-		preset: 'group_call_participant',
+		preset,
 		name: "Anonymous",
 	});
 

@@ -20,54 +20,6 @@
 	<body>
 		<rtk-meeting id="my-meeting"></rtk-meeting>
 
-		<script type="module">
-			import RealtimeKitClient from '@cloudflare/realtimekit';
-			import DyteVideoBackgroundTransformer from '@dytesdk/video-background-transformer';
-
-			const init = async () => {
-				const room = new URLSearchParams(window.location.search).get('room') || 'default';
-				const authTokenUrl = new URL(`/api/auth-token/${room}`, window.location.origin);
-
-				const query = new URLSearchParams(window.location.search);
-				if (query.has('preset')) {
-					authTokenUrl.searchParams.set('preset', query.get('preset'));
-				}
-
-				const authToken = await fetch(authTokenUrl).then((response) => response.text());
-
-				const meeting = await RealtimeKitClient.init({
-					authToken,
-					defaults: {
-						audio: true,
-						video: true,
-					},
-				});
-
-				await meeting.self.setVideoMiddlewareGlobalConfig({
-					disablePerFrameCanvasRendering: true,
-				});
-
-				const videoBackgroundTransformer = await DyteVideoBackgroundTransformer.init({
-					meeting: meeting,
-					segmentationConfig: {
-						pipeline: 'webgl2', // 'webgl2' | 'canvas2dCpu'
-					},
-				});
-
-				const videoMiddleware = await videoBackgroundTransformer.createStaticBackgroundVideoMiddleware(
-					`https://assets.dyte.io/backgrounds/bg-dyte-office.jpg`
-				);
-
-				meeting.self.addVideoMiddleware(videoMiddleware);
-
-				document.getElementById('my-meeting').meeting = meeting;
-
-				meeting.ai.on('transcript', (transcriptData) => {
-					console.log('Transcript:', transcriptData);
-				});
-			};
-
-			await init();
-		</script>
+		<script type="module" src="./src/ui/index.ts"></script>
 	</body>
 </html>
